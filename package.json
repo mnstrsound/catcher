@@ -1,0 +1,19 @@
+{
+  "name": "catcher",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "Egor Petrov <mnstrsound@gmail.com>",
+  "license": "ISC",
+  "dependencies": {
+    "download": "^5.0.2",
+    "mkdirp": "^0.5.1",
+    "node-fetch": "^1.6.3",
+    "zip-folder": "^1.0.0"
+  }
+}

@@ -3,4 +3,4 @@
 Пример использования:
 
 `const catcher = require('catcher');`  
-`catcher('http://mysite.com', 'mysite')`
+`catcher('http://mysite.com', 'mysite');`

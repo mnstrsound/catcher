@@ -50,10 +50,6 @@ function isFile(path) {
     return /\.[^\/]{2,}$/.test(path);
 }
 
-function isAbsulute(path) {
-    return /^(?:https?:\/\/|\/\/?)/i.test(path);
-}
-
 function getDomainName(url) {
     let domain = url.match(/^(?:https?:\/\/)?(?:[^@\/\n]+@)?(?:www\.)?([^:\/\n]+)/i);
     return domain ? domain[1] : domain;
@@ -63,50 +59,26 @@ function isDomainsEquals(mainDomen, additionalDomain) {
     return getDomainName(mainDomen) === getDomainName(additionalDomain);
 }
 
-//TODO: Refactor - объединить методы
-
-function findUrls(data, url) {
-    let regexp = /url\((['"]?)(?!data:)([\w.;=:,#\/\-%]+)\1\)/igm;
-    let urls = [];
+function findSources(data, url) {
+    let srcRe = /\s+(?:href|src) *= *(['"]?)(\S+)\1/igm;
+    let urlRe = /url\((['"]?)(?!data:)([\w.;=:,#\/\-%]+)\1\)/igm;
+    let importRe = /@import\s+(['"]?)([\w.;=:,#\/\-%]+)\1/igm;
+    let reArr = [srcRe, urlRe, importRe];
     let result;
+    let sources = [];
 
-    while (result = regexp.exec(data)) {
-        let path;
-        if (isUrl(result[2]) && !isDomainsEquals(url, result[2])) continue;
-        if (!isFile(result[2])) continue;
-        path = sliceVersionPostfix(replaceUrl(result[2], url));
-        if (urls.indexOf(path) == -1) urls.push(path);
-    }
+    reArr.forEach(re => {
+        while (result = re.exec(data)) {
+            let source;
 
-    return urls;
-}
+            if (isUrl(result[2]) && !isDomainsEquals(url, result[2])) continue;
+            if (!isFile(result[2])) continue;
+            source = sliceVersionPostfix(replaceUrl(result[2], url));
+            if (sources.indexOf(source) == -1) sources.push(source);
+        }
+    });
 
-function findMedia(data, url) {
-    let re = /\s+(?:href|src) *= *(['"]?)(\S+)\1/igm;
-    let result;
-    let media = [];
-
-    while (result = re.exec(data)) {
-        let path;
-        if (isUrl(result[2]) && !isDomainsEquals(url, result[2])) continue;
-        if (!isFile(result[2])) continue;
-        path = sliceVersionPostfix(replaceUrl(result[2], url));
-        if (media.indexOf(path) == -1) media.push(path);
-    }
-
-    return media.filter(filterFiles);
-}
-
-function findImports(data) {
-    let regexp = /@import\s+(['"]?)([\w.;=:,#\/\-%]+)\1/igm;
-    let imports = [];
-    let result;
-
-    while (result = regexp.exec(data)) {
-        if (imports.indexOf(result[2]) == -1) imports.push(result[2])
-    }
-
-    return imports;
+    return sources;
 }
 
 function filterCss(item) {
@@ -117,25 +89,13 @@ function filterFiles(item) {
     return /\.(?!php)?[^\/]{2,}$/i.test(item);
 }
 
-function replaceAbsoluteUrl(data, domain, dest) {
-    let domainName = getDomainName(domain);
-    let regexp = new RegExp('(?:https?:\/\/|\/\/)(?:www\.)?' + domainName, 'igm');
-
-    return data.replace(regexp, dest);
-}
-
-function replaceAbsolutePath(data, dest) {
-    let regexp = /\/(?!\/)/igm;
-
-    return data.replace(regexp, dest + '$&');
-}
-
 /*
 * Меняем абсолютные пути файлов на относительные
 * */
 //TODO: Refactor - переписать красиво
 
 function replaceMedia(data, url) {
+
     data = data.replace(/\s+(href|src) *= *(['"]?)(\S+)\2/igm, function (a, b, c, d) {
         let res;
         if (isUrl(c) && isDomainsEquals(url, c)) {
@@ -214,25 +174,22 @@ function downloadMedia(url, dest) {
 //TODO: Переписать красиво
 
 function replaceUrlsToRelative(css, url) {
-    let writeCss = css.replace(/url\((['"]?)(?!data:)([\w.;=:,#\/\-%]+)\1\)/igm, function (a, b, c) {
-        if (isUrl(c) && isDomainsEquals(url, c)) {
+    return css.replace(/url\((['"]?)(?!data:)([\w.;=:,#\/\-%]+)\1\)/igm, function ($1, $2, $3) {
+        let bubbling = '';
 
-        } else if (/^\/(?!\/)/.test(c)) {
+        if (isUrl($3) && !isDomainsEquals(url, $3)) return $3;
+        else if (/^\/(?!\/)/.test($3)) {
+            //Абсолютный путь
             let parsedUrl = url.match(/(?:https?:\/\/)?(www\.)?(?:[^\/]+)/ig);
             let count = parsedUrl.slice(1, parsedUrl.length - 1);
-            let toTop = '';
-            c = c.replace(/^\//, '');
+            $3 = $3.replace(/^\//, '');
             for (var i = 0; i < count.length; i++) {
-                toTop += '../';
+                bubbling += '../';
             }
-            c = 'url(' + toTop + c + ')';
-        } else {
-            c = 'url(' + c + ')';
         }
-        return c;
-    });
 
-    return writeCss;
+        return 'url(' + bubbling + $3 + ')';
+    });
 }
 
 function downloadCss(url, origDest) {
@@ -250,8 +207,9 @@ function downloadCss(url, origDest) {
                             if (err) {
                                 reject(err);
                             } else {
-                                let files = findUrls(css, url);
-                                downloadFiles(files, origDest)
+                                let sources = findSources(css, url);
+                                //console.log(sources);
+                                downloadFiles(sources, origDest)
                                     .then(() => { resolve() })
                                     .catch(e => { resolve() });
                             }
@@ -272,13 +230,9 @@ function catcher(url, origDest) {
             mkdirp(origDest, function (err) {
                 if (!err) {
                     fs.writeFile(filePath, replaceMedia(html, url), 'utf8'); //async op
-                    let files = findUrls(html, url) || [];
-                    let media = findMedia(html, url) || [];
-                    let css = media.filter(filterCss);
-                    media = media.filter(function (item) {
-                        return item.indexOf('.css') === -1;
-                    });
-                    files = files.concat(media);
+                    let sources = findSources(html, url);
+                    let css = sources.filter(filterCss);
+                    let files = sources.filter(item => item.indexOf('.css') === -1);
                     Promise.all([Promise.all(files.map(file => {
                         downloadMedia(file, getFileDest(file, origDest));
                     })), Promise.all(css.map(file => {
@@ -297,6 +251,15 @@ function catcher(url, origDest) {
         })
 }
 
-module.exports = catcher;
+module.exports = {
+    isUrl,
+    isFile,
+    getDomainName,
+    isDomainsEquals,
+    getFileName,
+    getFileDest,
+    replaceUrl,
+    sliceVersionPostfix
+};
 
-// catcher('http://seasonkrasoty.ru/', 'sz');
+catcher('http://seasonkrasoty.ru/', 'sz');

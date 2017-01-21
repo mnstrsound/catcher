@@ -1,0 +1,87 @@
+/* http://meyerweb.com/eric/tools/css/reset/
+        v2.0 | 20110126
+        License: none (public domain)
+        */
+html, body, div, span, applet, object, iframe,
+h1, h2, h3, h4, h5, h6, p, blockquote, pre,
+a, abbr, acronym, address, big, cite, code,
+del, dfn, em, img, ins, kbd, q, s, samp,
+small, strike, strong, sub, sup, tt, var,
+b, u, i, center,
+dl, dt, dd, ol, ul, li,
+fieldset, form, label, legend,
+table, caption, tbody, tfoot, thead, tr, th, td,
+article, aside, canvas, details, embed,
+figure, figcaption, footer, header, hgroup,
+menu, nav, output, ruby, section, summary,
+time, mark, audio, video {
+    margin: 0;
+    padding: 0;
+    border: 0;
+    font-size: 100%;
+    font: inherit;
+    vertical-align: baseline;
+}
+/* HTML5 display-role reset for older browsers */
+article, aside, details, figcaption, figure,
+footer, header, hgroup, menu, nav, section {
+    display: block;
+}
+body {
+    line-height: 1;
+}
+ol, ul {
+    list-style: none;
+}
+blockquote, q {
+    quotes: none;
+}
+blockquote:before, blockquote:after,
+q:before, q:after {
+    content: '';
+    content: none;
+}
+table {
+    border-collapse: collapse;
+    border-spacing: 0;
+}
+body {
+    background: #f0f0f0 url('../img/bg.jpg') center no-repeat;
+    background-size: cover;
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+}
+* {
+    box-sizing: border-box;
+}
+.form {
+    margin: auto;
+}
+.form__input {
+    font-family: 'Roboto', sans-serif;
+    font-size: 16px;
+    outline: none;
+    border-radius: 5px;
+    width: 380px;
+    height: 40px;
+    padding: 0 10px;
+    border: 0;
+    /*border: 2px solid #ccc;*/
+    box-shadow: 3px 3px 3px rgba(0,0,0,.15);
+}
+.form__submit {
+    font-family: 'Roboto', sans-serif;
+    font-size: 16px;
+    outline: none;
+    cursor: pointer;
+    border-radius: 5px;
+    margin-left: 10px;
+    width: 80px;
+    height: 40px;
+    color: #fff;
+    border: 0;
+    /*border: 2px solid #8e44ad;*/
+    background: #9b59b6;
+    box-shadow: 3px 3px 3px rgba(0,0,0,.15);
+}

@@ -1,0 +1,36 @@
+doctype html
+html(lang='en')
+    head
+        meta(charset='UTF-8')
+        title Take it!
+        link(href='https://fonts.googleapis.com/css?family=Roboto&subset=cyrillic', rel='stylesheet')
+    link(rel='stylesheet', href='static/css/style.css')
+    body
+        form#form.form(action='/', method="post")
+            input#form__input.form__input(type='text', placeholder='Введи URL сайта', name="url")
+            input.form__submit(type='submit', value='Take it!')
+    script.
+        var form = document.getElementById('form');
+
+        function handleSubmit(e) {
+            e.preventDefault();
+            var input = document.getElementById('form__input');
+            fetch('/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({url: input.value})
+            })
+                .then(function (data) {
+                    return data.json();
+                })
+                .then(function (json) {
+                    var link = document.createElement('a');
+                    link.setAttribute('href', 'http://localhost:3000/' + json.link);
+                    link.click();
+                });
+        }
+
+        form.addEventListener('submit', handleSubmit, false);
+
